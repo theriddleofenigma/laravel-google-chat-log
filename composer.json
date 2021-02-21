@@ -16,9 +16,6 @@
         "guzzlehttp/guzzle": "^5.3.3|^6.2.1|^7.0"
     },
     "autoload": {
-        "files": [
-            "src/helpers.php"
-        ],
         "psr-4": {
             "Enigma\\": "src/"
         }
