@@ -28,4 +28,4 @@ You can provide the eight logging levels defined in the [RFC 5424 specification]
 
 Copyright © Kumaravel
 
-Laravel Google Chat Log is open-sourced software licensed under the [MIT license](LICENSE.md).
+Laravel Google Chat Log is open-sourced software licensed under the [MIT license](LICENSE).
