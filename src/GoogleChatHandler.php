@@ -2,8 +2,7 @@
 
 namespace Enigma;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Logger;
 
@@ -13,13 +12,10 @@ class GoogleChatHandler extends AbstractProcessingHandler
      * Writes the record down to the log of the implementing handler.
      *
      * @param array $record
-     * @throws GuzzleException
      */
     protected function write(array $record): void
     {
-        (new Client())->post($this->getWebhookUrl(), [
-            'body' => json_encode($this->getRequestBody($record)),
-        ]);
+        Http::post($this->getWebhookUrl(), $this->getRequestBody($record));
     }
 
     /**
@@ -41,7 +37,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
                 Logger::EMERGENCY => '#ff1100',
             ][$record['level']] ?? '#ff1100';
 
-        return "<b><span color='{$color}'>{$record['level_name']}</span></b> "
+        return "<b><font color='{$color}'>{$record['level_name']}</font></b> "
             . config('app.env')
             . ' [' . config('app.url') . "]<br>[{$record['datetime']}] ";
     }

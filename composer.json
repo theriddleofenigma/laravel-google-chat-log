@@ -13,6 +13,7 @@
     },
     "require-dev": {
         "monolog/monolog": "^2.0",
+        "illuminate/support": "^7.0|^8.0",
         "guzzlehttp/guzzle": "^5.3.3|^6.2.1|^7.0"
     },
     "autoload": {
