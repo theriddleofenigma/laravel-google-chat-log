@@ -14,12 +14,15 @@ Add the following code to the channels array in `config/logging.php` in your lar
 ```
 'google-chat' => [
     'driver' => 'monolog',
+    'url' => env('LOG_GOOGLE_WEBHOOK_URL'),
     'level' => 'warning',
     'handler' => \Enigma\GoogleChatHandler::class,
 ],
 ```
 
 You can provide the eight logging levels defined in the [RFC 5424 specification](https://tools.ietf.org/html/rfc5424): `emergency`, `alert`, `critical`, `error`, `warning`, `notice`, `info`, and `debug`
+
+<b>Note*:</b> Make sure to set the <b>LOG_GOOGLE_WEBHOOK_URL</b> env variable.
 
 ## License
 

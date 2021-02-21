@@ -17,7 +17,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
      */
     protected function write(array $record): void
     {
-        (new Client())->post(env('LOG_GOOGLE_WEBHOOK_URL'), [
+        (new Client())->post($this->getWebhookUrl(), [
             'body' => json_encode($this->getRequestBody($record)),
         ]);
     }
@@ -41,7 +41,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
                 Logger::EMERGENCY => '#ff1100',
             ][$record['level']] ?? '#ff1100';
 
-        return "<b><font color='{$color}'>{$record['level_name']}</font></b> "
+        return "<b><span color='{$color}'>{$record['level_name']}</span></b> "
             . config('app.env')
             . ' [' . config('app.url') . "]<br>[{$record['datetime']}] ";
     }
@@ -68,5 +68,15 @@ class GoogleChatHandler extends AbstractProcessingHandler
                 ],
             ],
         ];
+    }
+
+    /**
+     * Get the webhook url.
+     *
+     * @return mixed
+     */
+    protected function getWebhookUrl()
+    {
+        return config('logging.channels.google-chat.url');
     }
 }
