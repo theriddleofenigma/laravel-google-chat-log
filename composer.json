@@ -1,5 +1,5 @@
 {
-    "name": "kumaravel/laravel-google-chat-log",
+    "name": "theriddleofenigma/laravel-google-chat-log",
     "description": "Brings up the option for sending the logs to google chat [GSuite].",
     "license": "MIT",
     "authors": [
