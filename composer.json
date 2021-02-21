@@ -1,0 +1,26 @@
+{
+    "name": "kumaravel/laravel-google-chat-log",
+    "description": "Brings up the option for sending the logs to google chat [GSuite].",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kumaravel",
+            "email": "kumarwindows11@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.3|^8.0"
+    },
+    "require-dev": {
+        "monolog/monolog": "^2.0",
+        "guzzlehttp/guzzle": "^5.3.3|^6.2.1|^7.0"
+    },
+    "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
+        "psr-4": {
+            "Enigma\\": "src/"
+        }
+    }
+}
