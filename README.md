@@ -14,7 +14,7 @@ Add the following code to the channels array in `config/logging.php` in your lar
 ```
 'google-chat' => [
     'driver' => 'monolog',
-    'url' => env('LOG_GOOGLE_WEBHOOK_URL'),
+    'url' => env('LOG_GOOGLE_CHAT_WEBHOOK_URL'),
     'level' => 'warning',
     'handler' => \Enigma\GoogleChatHandler::class,
 ],
