@@ -2,6 +2,7 @@
 
 namespace Enigma;
 
+use Exception;
 use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Logger;
@@ -12,6 +13,8 @@ class GoogleChatHandler extends AbstractProcessingHandler
      * Writes the record down to the log of the implementing handler.
      *
      * @param array $record
+     *
+     * @throws \Exception
      */
     protected function write(array $record): void
     {
@@ -51,7 +54,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
     protected function getRequestBody(array $record): array
     {
         return [
-            'text' => $record['formatted'],
+            'text' => substr($record['formatted'], 0, 4096),
             'cards' => [
                 [
                     'sections' => [
@@ -70,9 +73,16 @@ class GoogleChatHandler extends AbstractProcessingHandler
      * Get the webhook url.
      *
      * @return mixed
+     *
+     * @throws \Exception
      */
     protected function getWebhookUrl()
     {
-        return config('logging.channels.google-chat.url');
+        $url = config('logging.channels.google-chat.url');
+        if (!$url) {
+            throw new Exception('Google chat webhook url is not configured.');
+        }
+
+        return $url;
     }
 }
