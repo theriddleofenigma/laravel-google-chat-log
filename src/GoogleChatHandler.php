@@ -47,7 +47,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
     protected function getRequestBody(array $record): array
     {
         return [
-            'text' => $this->notifyUserId() . substr($record['formatted'], 0, 4096),
+            'text' => substr($this->notifyUserId() . $record['formatted'], 0, 4096),
             'cards' => [
                 [
                     'sections' => [
@@ -93,6 +93,6 @@ class GoogleChatHandler extends AbstractProcessingHandler
      */
     protected function notifyUserId(): string
     {
-        return ($userId = config('logging.channels.google-chat.notify_user_id')) ? "<users/$userId>" : '';
+        return ($userId = config('logging.channels.google-chat.notify_user_id')) ? "<users/$userId> " : '';
     }
 }
