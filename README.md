@@ -29,7 +29,7 @@ Now, you can notify a specific user with `@mention` in the error log by setting 
 
 For getting the <b>USER_ID</b>, right-click the user-icon of the person whom you want to notify in the Google chat from your browser window and select inspect. Under the `div` element find the attribute data_member_id, then the USER_ID can be found as `data-member-id="user/human/{USER_ID}>"`.
 
-In order to notify all the users like `@all`, Set ```LOG_GOOGLE_CHAT_NOTIFY_USER_ID=all```.
+In order to notify all the users like `@all`, Set ```LOG_GOOGLE_CHAT_NOTIFY_USER_ID=all```. Also, you can set multiple USER_IDs as comma separated value.
 
 ## License
 
