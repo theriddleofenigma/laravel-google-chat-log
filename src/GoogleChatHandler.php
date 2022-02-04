@@ -22,12 +22,53 @@ class GoogleChatHandler extends AbstractProcessingHandler
     }
 
     /**
+     * Get the webhook url.
+     *
+     * @return mixed
+     *
+     * @throws \Exception
+     */
+    protected function getWebhookUrl()
+    {
+        $url = config('logging.channels.google-chat.url');
+        if (!$url) {
+            throw new Exception('Google chat webhook url is not configured.');
+        }
+
+        return $url;
+    }
+
+    /**
+     * Get the request body content.
+     *
+     * @param array $record
+     * @return array
+     */
+    protected function getRequestBody(array $record): array
+    {
+        return [
+            'text' => $this->notifyUserId() . substr($record['formatted'], 0, 4096),
+            'cards' => [
+                [
+                    'sections' => [
+                        'widgets' => [
+                            'textParagraph' => [
+                                'text' => $this->getCardContent($record),
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
      * Get the card content.
      *
      * @param array $record
      * @return string
      */
-    public function getCardContent(array $record): string
+    protected function getCardContent(array $record): string
     {
         $color = [
                 Logger::DEBUG => '#000000',
@@ -46,43 +87,12 @@ class GoogleChatHandler extends AbstractProcessingHandler
     }
 
     /**
-     * Get the request body content.
+     * Get the text string for notifying the configured user id.
      *
-     * @param array $record
-     * @return array
+     * @return string
      */
-    protected function getRequestBody(array $record): array
+    protected function notifyUserId(): string
     {
-        return [
-            'text' => substr($record['formatted'], 0, 4096),
-            'cards' => [
-                [
-                    'sections' => [
-                        'widgets' => [
-                            'textParagraph' => [
-                                'text' => $this->getCardContent($record),
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * Get the webhook url.
-     *
-     * @return mixed
-     *
-     * @throws \Exception
-     */
-    protected function getWebhookUrl()
-    {
-        $url = config('logging.channels.google-chat.url');
-        if (!$url) {
-            throw new Exception('Google chat webhook url is not configured.');
-        }
-
-        return $url;
+        return ($userId = config('logging.channels.google-chat.notify_user_id')) ? "<users/$userId>" : '';
     }
 }
