@@ -105,11 +105,12 @@ class GoogleChatHandler extends AbstractProcessingHandler
                 Logger::DEBUG => config('logging.channels.google-chat.notify_users.debug'),
             ][$level] ?? '';
 
+        $levelBasedUserIds = trim($levelBasedUserIds);
         if (($userIds = config('logging.channels.google-chat.notify_users.default')) && $levelBasedUserIds) {
             $levelBasedUserIds = ",$levelBasedUserIds";
         }
 
-        return $this->constructNotifiableText($userIds . $levelBasedUserIds);
+        return $this->constructNotifiableText(trim($userIds) . $levelBasedUserIds);
     }
 
     /**
@@ -120,7 +121,6 @@ class GoogleChatHandler extends AbstractProcessingHandler
      */
     protected function constructNotifiableText($userIds): string
     {
-        $userIds = explode(',', $userIds);
         if (!$userIds) {
             return '';
         }
@@ -133,7 +133,9 @@ class GoogleChatHandler extends AbstractProcessingHandler
             }
 
             return "<users/$userId> ";
-        }, array_unique($userIds)));
+        }, array_unique(
+            explode(',', $userIds))
+        ));
 
         return $allUsers . $otherIds;
     }
