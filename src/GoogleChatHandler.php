@@ -18,24 +18,32 @@ class GoogleChatHandler extends AbstractProcessingHandler
      */
     protected function write(array $record): void
     {
-        Http::post($this->getWebhookUrl(), $this->getRequestBody($record));
+        foreach ($this->getWebhookUrl() as $url) {
+            Http::post($url, $this->getRequestBody($record));
+        }
     }
 
     /**
      * Get the webhook url.
      *
-     * @return mixed
+     * @return array
      *
      * @throws \Exception
      */
-    protected function getWebhookUrl()
+    protected function getWebhookUrl(): array
     {
         $url = config('logging.channels.google-chat.url');
         if (!$url) {
             throw new Exception('Google chat webhook url is not configured.');
         }
 
-        return $url;
+        if (is_array($url)) {
+            return $url;
+        }
+
+        return array_map(function ($each) {
+            return trim($each);
+        }, explode(',', $url));
     }
 
     /**
@@ -134,7 +142,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
 
             return "<users/$userId> ";
         }, array_unique(
-            explode(',', $userIds))
+                explode(',', $userIds))
         ));
 
         return $allUsers . $otherIds;
