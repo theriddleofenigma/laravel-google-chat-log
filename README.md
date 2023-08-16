@@ -26,7 +26,7 @@ Add the following code to the channels array in `config/logging.php` in your lar
         'info' => env('LOG_GOOGLE_CHAT_NOTIFY_USER_ID_INFO'),
         'debug' => env('LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEBUG'),
     ],
-    'level' => 'warning',
+    'level' => env('LOG_LEVEL', 'debug'),
     'handler' => \Enigma\GoogleChatHandler::class,
 ],
 ```
@@ -34,8 +34,10 @@ Add the following code to the channels array in `config/logging.php` in your lar
 You can provide the eight logging levels defined in the [RFC 5424 specification](https://tools.ietf.org/html/rfc5424): `emergency`, `alert`, `critical`, `error`, `warning`, `notice`, `info`, and `debug`
 
 <b>Note*:</b> Make sure to set the <b>LOG_GOOGLE_CHAT_WEBHOOK_URL</b> env variable.
-And <b>LOG_GOOGLE_CHAT_NOTIFY_USER_ID</b> is optional.
+And all other <b>LOG_GOOGLE_CHAT_NOTIFY_USER_ID</b> are optional.
 Here, you can set multiple google chat webhook url as comma separated value for the <b>LOG_GOOGLE_CHAT_WEBHOOK_URL</b> env variable.
+
+<b>Note*:</b> For lumen, make sure the `$app->withFacades();` is uncommented in the <b>bootstrap/app.php</b>.
 
 Now, you can notify a specific user with `@mention` in the error log by setting the corresponding USER_ID to the `LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT` env variable. User Ids mapped under `LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT` will be notified for all log levels.  
 
