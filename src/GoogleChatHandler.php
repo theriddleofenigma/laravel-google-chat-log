@@ -13,16 +13,14 @@ class GoogleChatHandler extends AbstractProcessingHandler
     /**
      * Writes the record down to the log of the implementing handler.
      *
-     * @param LogRecord $record
+     * @param array $record
      *
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function write(LogRecord $record): void
+    protected function write(array $record): void
     {
-        $params = $record->toArray();
-        $params['formatted'] = $record->formatted;
         foreach ($this->getWebhookUrl() as $url) {
-            $response = Http::post($url, $this->getRequestBody($params));
+            $response = Http::post($url, $this->getRequestBody($record));
         }
     }
 
@@ -146,15 +144,18 @@ class GoogleChatHandler extends AbstractProcessingHandler
         }
 
         $allUsers = '';
-        $otherIds = implode(array_map(function ($userId) use (&$allUsers) {
-            if (strtolower($userId) === 'all') {
-                $allUsers = '<users/all> ';
-                return '';
-            }
+        $otherIds = implode(array_map(
+            function ($userId) use (&$allUsers) {
+                if (strtolower($userId) === 'all') {
+                    $allUsers = '<users/all> ';
+                    return '';
+                }
 
-            return "<users/$userId> ";
-        }, array_unique(
-                explode(',', $userIds))
+                return "<users/$userId> ";
+            },
+            array_unique(
+                explode(',', $userIds)
+            )
         ));
 
         return $allUsers . $otherIds;
