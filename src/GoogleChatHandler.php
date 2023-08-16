@@ -11,18 +11,23 @@ use Monolog\LogRecord;
 class GoogleChatHandler extends AbstractProcessingHandler
 {
     /**
+     * Additional logs closure.
+     *
+     * @var \Closure|null
+     */
+    public static \Closure|null $additionalLogs = null;
+
+    /**
      * Writes the record down to the log of the implementing handler.
      *
      * @param LogRecord $record
      *
      * @throws \Exception
      */
-    protected function write(LogRecord $record): void
+    protected function write(array $record): void
     {
-        $params = $record->toArray();
-        $params['formatted'] = $record->formatted;
         foreach ($this->getWebhookUrl() as $url) {
-            $response = Http::post($url, $this->getRequestBody($params));
+            Http::post($url, $this->getRequestBody($record));
         }
     }
 
@@ -52,30 +57,31 @@ class GoogleChatHandler extends AbstractProcessingHandler
     /**
      * Get the request body content.
      *
-     * @param array $recordArr
+     * @param array $record
      * @return array
      */
-    protected function getRequestBody(array $recordArr): array
+    protected function getRequestBody(array $record): array
     {
-        $recordArr['formatted'] = substr($recordArr['formatted'], 34);
         return [
-            'text' => substr($this->getNotifiableText($recordArr['level'] ?? '') . $recordArr['formatted'], 0, 3800),
+            'text' => substr($this->getNotifiableText($record['level'] ?? '') . $record['formatted'], 0, 4096),
             'cardsV2' => [
                 [
                     'cardId' => 'info-card-id',
                     'card' => [
                         'header' => [
-                            'title' => "{$recordArr['level_name']}: {$recordArr['message']}",
-                            'subtitle' => config('app.url'),
+                            'title' => "{$record['level_name']}: {$record['message']}",
+                            'subtitle' => config('app.name'),
                         ],
                         'sections' => [
                             'header' => 'Details',
                             'collapsible' => true,
-                            'uncollapsibleWidgetsCount' => 1,
+                            'uncollapsibleWidgetsCount' => 3,
                             'widgets' => [
-                                $this->cardWidget(ucwords(config('app.env') ?? '') . ' [Env]', 'BOOKMARK'),
-                                $this->cardWidget($this->getLevelContent($recordArr), 'TICKET'),
-                                $this->cardWidget($recordArr['datetime'], 'CLOCK'),
+                                $this->cardWidget(ucwords(config('app.env') ?: 'NA') . ' [Env]', 'BOOKMARK'),
+                                $this->cardWidget($this->getLevelContent($record), 'TICKET'),
+                                $this->cardWidget($record['datetime'], 'CLOCK'),
+                                $this->cardWidget(request()->url(), 'BUS'),
+                                ...$this->getCustomLogs(),
                             ],
                         ],
                     ],
@@ -87,10 +93,10 @@ class GoogleChatHandler extends AbstractProcessingHandler
     /**
      * Get the card content.
      *
-     * @param array $recordArr
+     * @param array $record
      * @return string
      */
-    protected function getLevelContent(array $recordArr): string
+    protected function getLevelContent(array $record): string
     {
         $color = [
             Logger::EMERGENCY => '#ff1100',
@@ -101,9 +107,9 @@ class GoogleChatHandler extends AbstractProcessingHandler
             Logger::NOTICE => '#00aeff',
             Logger::INFO => '#48d62f',
             Logger::DEBUG => '#000000',
-        ][$recordArr['level']] ?? '#ff1100';
+        ][$record['level']] ?? '#ff1100';
 
-        return "<font color='{$color}'>{$recordArr['level_name']}</font>";
+        return "<font color='{$color}'>{$record['level_name']}</font>";
     }
 
     /**
@@ -175,5 +181,43 @@ class GoogleChatHandler extends AbstractProcessingHandler
                 'text' => $text,
             ],
         ];
+    }
+
+    /**
+     * Get the custom logs.
+     *
+     * @return array
+     * @throws Exception
+     */
+    public function getCustomLogs(): array
+    {
+        $additionalLogs = GoogleChatHandler::$additionalLogs;
+        if (!$additionalLogs) {
+            return [];
+        }
+
+        $additionalLogs = $additionalLogs(request());
+        if (!is_array($additionalLogs)) {
+            throw new Exception('Data returned from the additional Log must be an array.');
+        }
+
+        $logs = [];
+        foreach ($additionalLogs as $key => $value) {
+            if ($value && !is_string($value)) {
+                try {
+                    $value = json_encode($value);
+                } catch (Throwable $throwable) {
+                    throw new Exception("Additional log key-value should be a string for key[{$key}]. For logging objects, json or array, please stringify by doing json encode or serialize on the value.");
+                }
+            }
+
+            if (!is_numeric($key)) {
+                $key = ucwords(str_replace('_', ' ', $key));
+                $value = "<b>{$key}:</b> $value";
+            }
+            $logs[] = $this->cardWidget($value, 'CONFIRMATION_NUMBER_ICON');
+        }
+
+        return $logs;
     }
 }

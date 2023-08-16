@@ -2,7 +2,7 @@
 
 # Laravel Google Chat Log
 
-Brings up the option for sending the logs to google chat [GSuite] from [Laravel](https://laravel.com)/[Lumen](https://lumen.laravel.com).
+Brings up the option for sending the logs to google chat [Google Workspace formerly called GSuite] from [Laravel](https://laravel.com)/[Lumen](https://lumen.laravel.com).
 
 ## Installation
 ### Composer install
@@ -11,7 +11,7 @@ composer require theriddleofenigma/laravel-google-chat-log
 ```
 
 Add the following code to the channels array in `config/logging.php` in your laravel/lumen application.
-```
+```php
 'google-chat' => [
     'driver' => 'monolog',
     'url' => env('LOG_GOOGLE_CHAT_WEBHOOK_URL'),
@@ -42,7 +42,25 @@ Now, you can notify a specific user with `@mention` in the error log by setting 
 For getting the <b>USER_ID</b>, right-click the user-icon of the person whom you want to notify in the Google chat from your browser window and select inspect. Under the `div` element find the attribute data_member_id, then the USER_ID can be found as `data-member-id="user/human/{USER_ID}>"`.
 
 In order to notify all the users like `@all`, Set ```LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT=all```. Also, you can set multiple USER_IDs as comma separated value.
-In order to notify different users for different log levels, you can set the corresponding env keys mentioned to configure in the `logging.php` file. 
+In order to notify different users for different log levels, you can set the corresponding env keys mentioned to configure in the `logging.php` file.
+
+Now, you can add custom additional logs to the Google chat message by passing a closure function to the GoogleChatHandler::$additionalLogs property. The request object will be passed as first argument to the closure while calling.
+```php
+use Enigma\GoogleChatHandler;
+use Illuminate\Http\Request;
+
+class AppServiceProvider {
+    public function register() {}
+    public function boot() {
+        GoogleChatHandler::$additionalLogs = function (Request $request) {
+            return [
+                'tenant' => $request->user()?->tenant->name,
+                'request' => json_encode($request->toArray()),
+            ];
+        };
+    }
+}
+```
 
 ## License
 
