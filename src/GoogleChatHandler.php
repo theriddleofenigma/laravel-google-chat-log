@@ -5,7 +5,7 @@ namespace Enigma;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
-use Monolog\Logger;
+use Monolog\Level;
 use Monolog\LogRecord;
 
 class GoogleChatHandler extends AbstractProcessingHandler
@@ -24,7 +24,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
      *
      * @throws \Exception
      */
-    protected function write(array $record): void
+    protected function write(LogRecord $record): void
     {
         foreach ($this->getWebhookUrl() as $url) {
             Http::post($url, $this->getRequestBody($record));
@@ -57,19 +57,19 @@ class GoogleChatHandler extends AbstractProcessingHandler
     /**
      * Get the request body content.
      *
-     * @param array $record
+     * @param LogRecord $record
      * @return array
      */
-    protected function getRequestBody(array $record): array
+    protected function getRequestBody(LogRecord $record): array
     {
         return [
-            'text' => substr($this->getNotifiableText($record['level'] ?? '') . $record['formatted'], 0, 4096),
+            'text' => substr($this->getNotifiableText($record->level->value ?? '') . $record->formatted, 0, 4096),
             'cardsV2' => [
                 [
                     'cardId' => 'info-card-id',
                     'card' => [
                         'header' => [
-                            'title' => "{$record['level_name']}: {$record['message']}",
+                            'title' => "{$record->level->name}: {$record->message}",
                             'subtitle' => config('app.name'),
                         ],
                         'sections' => [
@@ -79,7 +79,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
                             'widgets' => [
                                 $this->cardWidget(ucwords(config('app.env') ?: 'NA') . ' [Env]', 'BOOKMARK'),
                                 $this->cardWidget($this->getLevelContent($record), 'TICKET'),
-                                $this->cardWidget($record['datetime'], 'CLOCK'),
+                                $this->cardWidget($record->datetime, 'CLOCK'),
                                 $this->cardWidget(request()->url(), 'BUS'),
                                 ...$this->getCustomLogs(),
                             ],
@@ -93,23 +93,23 @@ class GoogleChatHandler extends AbstractProcessingHandler
     /**
      * Get the card content.
      *
-     * @param array $record
+     * @param LogRecord $record
      * @return string
      */
-    protected function getLevelContent(array $record): string
+    protected function getLevelContent(LogRecord $record): string
     {
         $color = [
-            Logger::EMERGENCY => '#ff1100',
-            Logger::ALERT => '#ff1100',
-            Logger::CRITICAL => '#ff1100',
-            Logger::ERROR => '#ff1100',
-            Logger::WARNING => '#ffc400',
-            Logger::NOTICE => '#00aeff',
-            Logger::INFO => '#48d62f',
-            Logger::DEBUG => '#000000',
-        ][$record['level']] ?? '#ff1100';
+            Level::Emergency->value => '#ff1100',
+            Level::Alert->value => '#ff1100',
+            Level::Critical->value => '#ff1100',
+            Level::Error->value => '#ff1100',
+            Level::Warning->value => '#ffc400',
+            Level::Notice->value => '#00aeff',
+            Level::Info->value => '#48d62f',
+            Level::Debug->value => '#000000',
+        ][$record->level->value] ?? '#ff1100';
 
-        return "<font color='{$color}'>{$record['level_name']}</font>";
+        return "<font color='{$color}'>{$record->level->name}</font>";
     }
 
     /**
@@ -121,14 +121,14 @@ class GoogleChatHandler extends AbstractProcessingHandler
     protected function getNotifiableText($level): string
     {
         $levelBasedUserIds = [
-            Logger::EMERGENCY => config('logging.channels.google-chat.notify_users.emergency'),
-            Logger::ALERT => config('logging.channels.google-chat.notify_users.alert'),
-            Logger::CRITICAL => config('logging.channels.google-chat.notify_users.critical'),
-            Logger::ERROR => config('logging.channels.google-chat.notify_users.error'),
-            Logger::WARNING => config('logging.channels.google-chat.notify_users.warning'),
-            Logger::NOTICE => config('logging.channels.google-chat.notify_users.notice'),
-            Logger::INFO => config('logging.channels.google-chat.notify_users.info'),
-            Logger::DEBUG => config('logging.channels.google-chat.notify_users.debug'),
+            Level::Emergency->value => config('logging.channels.google-chat.notify_users.emergency'),
+            Level::Alert->value => config('logging.channels.google-chat.notify_users.alert'),
+            Level::Critical->value => config('logging.channels.google-chat.notify_users.critical'),
+            Level::Error->value => config('logging.channels.google-chat.notify_users.error'),
+            Level::Warning->value => config('logging.channels.google-chat.notify_users.warning'),
+            Level::Notice->value => config('logging.channels.google-chat.notify_users.notice'),
+            Level::Info->value => config('logging.channels.google-chat.notify_users.info'),
+            Level::Debug->value => config('logging.channels.google-chat.notify_users.debug'),
         ][$level] ?? '';
 
         $levelBasedUserIds = trim($levelBasedUserIds);
