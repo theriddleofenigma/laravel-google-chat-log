@@ -10,12 +10,61 @@ use Monolog\LogRecord;
 
 class GoogleChatHandler extends AbstractProcessingHandler
 {
+
+    /**
+     * Google chat channel webhook
+     * @var array
+     */
+    private array $webhookUrls;
+
+    /**
+     * Optional user specific notifications configured per log level
+     * @var array
+     */
+    private array $userNotificationConfig;
+
     /**
      * Additional logs closure.
      *
      * @var \Closure|null
      */
     public static \Closure|null $additionalLogs = null;
+
+
+    /**
+     * @param string|array $url
+     * @param array $notify_users
+     * @param int|string|Level $level
+     * @param bool $bubble
+     */
+    public function __construct(
+        string|array     $url,
+        array            $notify_users = [],
+        int|string|Level $level = Level::Debug,
+        bool             $bubble = true
+    ){
+        parent::__construct($level, $bubble);
+
+        $this->webhookUrls = $this->parseWebhookUrl($url);
+        $this->userNotificationConfig = $notify_users;
+    }
+
+    /**
+     * Parse the webhook URL config value into an array, since multiple comma-separated URLs are supported
+     *
+     * @param string|array $url
+     * @return array
+     */
+    protected function parseWebhookUrl(string|array $url): array
+    {
+        if (is_array($url)) {
+            return $url;
+        }
+
+        return array_map(function ($each) {
+            return trim($each);
+        }, explode(',', $url));
+    }
 
     /**
      * Writes the record down to the log of the implementing handler.
@@ -26,32 +75,9 @@ class GoogleChatHandler extends AbstractProcessingHandler
      */
     protected function write(LogRecord $record): void
     {
-        foreach ($this->getWebhookUrl() as $url) {
+        foreach ($this->webhookUrls as $url) {
             Http::post($url, $this->getRequestBody($record));
         }
-    }
-
-    /**
-     * Get the webhook url.
-     *
-     * @return array
-     *
-     * @throws \Exception
-     */
-    protected function getWebhookUrl(): array
-    {
-        $url = config('logging.channels.google-chat.url');
-        if (!$url) {
-            throw new Exception('Google chat webhook url is not configured.');
-        }
-
-        if (is_array($url)) {
-            return $url;
-        }
-
-        return array_map(function ($each) {
-            return trim($each);
-        }, explode(',', $url));
     }
 
     /**
@@ -121,18 +147,20 @@ class GoogleChatHandler extends AbstractProcessingHandler
     protected function getNotifiableText($level): string
     {
         $levelBasedUserIds = [
-            Level::Emergency->value => config('logging.channels.google-chat.notify_users.emergency'),
-            Level::Alert->value => config('logging.channels.google-chat.notify_users.alert'),
-            Level::Critical->value => config('logging.channels.google-chat.notify_users.critical'),
-            Level::Error->value => config('logging.channels.google-chat.notify_users.error'),
-            Level::Warning->value => config('logging.channels.google-chat.notify_users.warning'),
-            Level::Notice->value => config('logging.channels.google-chat.notify_users.notice'),
-            Level::Info->value => config('logging.channels.google-chat.notify_users.info'),
-            Level::Debug->value => config('logging.channels.google-chat.notify_users.debug'),
+            Level::Emergency->value => $this->userNotificationConfig['emergency'] ?? '',
+            Level::Alert->value => $this->userNotificationConfig['alert'] ?? '',
+            Level::Critical->value => $this->userNotificationConfig['critical'] ?? '',
+            Level::Error->value => $this->userNotificationConfig['error'] ?? '',
+            Level::Warning->value => $this->userNotificationConfig['warning'] ?? '',
+            Level::Notice->value => $this->userNotificationConfig['notice'] ?? '',
+            Level::Info->value => $this->userNotificationConfig['info'] ?? '',
+            Level::Debug->value => $this->userNotificationConfig['debug'] ?? '',
         ][$level] ?? '';
 
         $levelBasedUserIds = trim($levelBasedUserIds);
-        if (($userIds = config('logging.channels.google-chat.notify_users.default')) && $levelBasedUserIds) {
+        $userIds = $this->userNotificationConfig['default'] ?? '';
+
+        if ($userIds && $levelBasedUserIds) {
             $levelBasedUserIds = ",$levelBasedUserIds";
         }
 
