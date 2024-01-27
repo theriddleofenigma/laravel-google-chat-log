@@ -5,7 +5,7 @@ namespace Enigma;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
-use Monolog\Logger;
+use Monolog\Level;
 use Monolog\LogRecord;
 
 class GoogleChatHandler extends AbstractProcessingHandler
@@ -24,7 +24,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
      *
      * @throws \Exception
      */
-    protected function write(array $record): void
+    protected function write(LogRecord $record): void
     {
         foreach ($this->getWebhookUrl() as $url) {
             Http::post($url, $this->getRequestBody($record));
@@ -57,19 +57,20 @@ class GoogleChatHandler extends AbstractProcessingHandler
     /**
      * Get the request body content.
      *
-     * @param array $record
+     * @param LogRecord $record
      * @return array
+     * @throws Exception
      */
-    protected function getRequestBody(array $record): array
+    protected function getRequestBody(LogRecord $record): array
     {
         return [
-            'text' => substr($this->getNotifiableText($record['level'] ?? '') . $record['formatted'], 0, 4096),
+            'text' => substr($this->getNotifiableText($record->level) . $record->formatted, 0, 4096),
             'cardsV2' => [
                 [
                     'cardId' => 'info-card-id',
                     'card' => [
                         'header' => [
-                            'title' => "{$record['level_name']}: {$record['message']}",
+                            'title' => "{$record->level->getName()}: {$record->message}",
                             'subtitle' => config('app.name'),
                         ],
                         'sections' => [
@@ -78,8 +79,8 @@ class GoogleChatHandler extends AbstractProcessingHandler
                             'uncollapsibleWidgetsCount' => 3,
                             'widgets' => [
                                 $this->cardWidget(ucwords(config('app.env') ?: 'NA') . ' [Env]', 'BOOKMARK'),
-                                $this->cardWidget($this->getLevelContent($record), 'TICKET'),
-                                $this->cardWidget($record['datetime'], 'CLOCK'),
+                                $this->cardWidget($this->getLevelContent($record->level), 'TICKET'),
+                                $this->cardWidget($record->datetime, 'CLOCK'),
                                 $this->cardWidget(request()->url(), 'BUS'),
                                 ...$this->getCustomLogs(),
                             ],
@@ -93,50 +94,48 @@ class GoogleChatHandler extends AbstractProcessingHandler
     /**
      * Get the card content.
      *
-     * @param array $record
+     * @param Level $level
      * @return string
      */
-    protected function getLevelContent(array $record): string
+    protected function getLevelContent(Level $level): string
     {
-        $color = [
-            Logger::EMERGENCY => '#ff1100',
-            Logger::ALERT => '#ff1100',
-            Logger::CRITICAL => '#ff1100',
-            Logger::ERROR => '#ff1100',
-            Logger::WARNING => '#ffc400',
-            Logger::NOTICE => '#00aeff',
-            Logger::INFO => '#48d62f',
-            Logger::DEBUG => '#000000',
-        ][$record['level']] ?? '#ff1100';
+        $color = match ($level) {
+            Level::Warning => '#ffc400',
+            Level::Notice => '#00aeff',
+            Level::Info => '#48d62f',
+            Level::Debug => '#000000',
+            // Default matches emergency, alert, critical and error.
+            default => '#ff1100',
+        };
 
-        return "<font color='{$color}'>{$record['level_name']}</font>";
+        return "<font color='{$color}'>{$level->getName()}</font>";
     }
 
     /**
      * Get the text string for notifying the configured user id.
      *
-     * @param $level
+     * @param Level $level
      * @return string
      */
-    protected function getNotifiableText($level): string
+    protected function getNotifiableText(Level $level): string
     {
-        $levelBasedUserIds = [
-            Logger::EMERGENCY => config('logging.channels.google-chat.notify_users.emergency'),
-            Logger::ALERT => config('logging.channels.google-chat.notify_users.alert'),
-            Logger::CRITICAL => config('logging.channels.google-chat.notify_users.critical'),
-            Logger::ERROR => config('logging.channels.google-chat.notify_users.error'),
-            Logger::WARNING => config('logging.channels.google-chat.notify_users.warning'),
-            Logger::NOTICE => config('logging.channels.google-chat.notify_users.notice'),
-            Logger::INFO => config('logging.channels.google-chat.notify_users.info'),
-            Logger::DEBUG => config('logging.channels.google-chat.notify_users.debug'),
-        ][$level] ?? '';
+        $levelBasedUserIds = match ($level) {
+            Level::Emergency => config('logging.channels.google-chat.notify_users.emergency'),
+            Level::Alert => config('logging.channels.google-chat.notify_users.alert'),
+            Level::Critical => config('logging.channels.google-chat.notify_users.critical'),
+            Level::Error => config('logging.channels.google-chat.notify_users.error'),
+            Level::Warning => config('logging.channels.google-chat.notify_users.warning'),
+            Level::Notice => config('logging.channels.google-chat.notify_users.notice'),
+            Level::Info => config('logging.channels.google-chat.notify_users.info'),
+            Level::Debug => config('logging.channels.google-chat.notify_users.debug'),
+        };
 
-        $levelBasedUserIds = trim($levelBasedUserIds);
+        $levelBasedUserIds = trim($levelBasedUserIds ?? '');
         if (($userIds = config('logging.channels.google-chat.notify_users.default')) && $levelBasedUserIds) {
             $levelBasedUserIds = ",$levelBasedUserIds";
         }
 
-        return $this->constructNotifiableText(trim($userIds) . $levelBasedUserIds);
+        return $this->constructNotifiableText(trim($userIds ?? '') . $levelBasedUserIds);
     }
 
     /**
@@ -196,7 +195,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
             return [];
         }
 
-        $additionalLogs = $additionalLogs(request());
+        $additionalLogs = $additionalLogs();
         if (!is_array($additionalLogs)) {
             throw new Exception('Data returned from the additional Log must be an array.');
         }
@@ -215,7 +214,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
                 $key = ucwords(str_replace('_', ' ', $key));
                 $value = "<b>{$key}:</b> $value";
             }
-            $logs[] = $this->cardWidget($value, 'CONFIRMATION_NUMBER_ICON');
+            $logs[] = $this->cardWidget($value, 'DESCRIPTION');
         }
 
         return $logs;
