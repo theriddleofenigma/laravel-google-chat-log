@@ -10,6 +10,11 @@ Brings up the option for sending the logs to google chat [Google Workspace forme
 composer require theriddleofenigma/laravel-google-chat-log
 ```
 
+For laravel 9.x or lower, please use v1.x
+```shell
+composer require theriddleofenigma/laravel-google-chat-log:^1.3
+```
+
 Add the following code to the channels array in `config/logging.php` in your laravel/lumen application.
 ```php
 'google-chat' => [
@@ -54,10 +59,10 @@ use Illuminate\Http\Request;
 class AppServiceProvider {
     public function register() {}
     public function boot() {
-        GoogleChatHandler::$additionalLogs = function (Request $request) {
+        GoogleChatHandler::$additionalLogs = function () {
             return [
-                'tenant' => $request->user()?->tenant->name,
-                'request' => json_encode($request->toArray()),
+                'tenant' => request()->user()?->tenant->name,
+                'request' => json_encode(request()->toArray()),
             ];
         };
     }
