@@ -51,7 +51,7 @@ For getting the <b>USER_ID</b>, right-click the user-icon of the person whom you
 In order to notify all the users like `@all`, Set ```LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT=all```. Also, you can set multiple USER_IDs as comma separated value.
 In order to notify different users for different log levels, you can set the corresponding env keys mentioned to configure in the `logging.php` file.
 
-Now, you can add custom additional logs to the Google chat message by passing a closure function to the GoogleChatHandler::$additionalLogs property. The request object will be passed as first argument to the closure while calling.
+Now, you can add custom additional logs to the Google chat message by passing a closure function to the GoogleChatHandler::$additionalLogs property.
 ```php
 use Enigma\GoogleChatHandler;
 use Illuminate\Http\Request;
