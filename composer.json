@@ -11,12 +11,13 @@
     "require": {
         "php": "^8.1",
         "monolog/monolog": "^3.0",
-        "illuminate/support": "^10.0|^11.0",
+        "illuminate/support": "^10.0|^11.0|^12.0",
         "guzzlehttp/guzzle": "^5.3.3|^6.2.1|^7.0"
     },
     "autoload": {
         "psr-4": {
             "Enigma\\": "src/"
         }
-    }
+    },
+    "version": "v2.1.0"
 }
