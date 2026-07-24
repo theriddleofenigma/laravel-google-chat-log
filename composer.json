@@ -1,6 +1,16 @@
 {
     "name": "theriddleofenigma/laravel-google-chat-log",
-    "description": "Brings up the option for sending the logs to google chat [Google Workplace formerly called GSuite].",
+    "description": "Send your Laravel/Lumen application logs straight to a Google Chat (Google Workspace) space via incoming webhooks.",
+    "keywords": [
+        "laravel",
+        "lumen",
+        "logging",
+        "monolog",
+        "google-chat",
+        "google-workspace",
+        "notifications"
+    ],
+    "homepage": "https://github.com/theriddleofenigma/laravel-google-chat-log",
     "license": "MIT",
     "authors": [
         {
@@ -9,15 +19,45 @@
         }
     ],
     "require": {
-        "php": "^8.1",
-        "monolog/monolog": "^3.0",
-        "illuminate/support": "^10.0|^11.0|^12.0",
-        "guzzlehttp/guzzle": "^5.3.3|^6.2.1|^7.0"
+        "php": "^8.2",
+        "guzzlehttp/guzzle": "^7.0",
+        "illuminate/support": "^11.0|^12.0|^13.0",
+        "monolog/monolog": "^3.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "phpunit/phpunit": "^10.5|^11.0|^12.0"
     },
     "autoload": {
         "psr-4": {
             "Enigma\\": "src/"
         }
     },
-    "version": "v2.1.0"
+    "autoload-dev": {
+        "psr-4": {
+            "Enigma\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Enigma\\GoogleChatLogServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "lint": "pint",
+        "test:lint": "pint --test",
+        "test:unit": "phpunit",
+        "test": [
+            "@test:lint",
+            "@test:unit"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }
