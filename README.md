@@ -2,24 +2,61 @@
 
 # Laravel Google Chat Log
 
-Brings up the option for sending the logs to google chat [Google Workspace formerly called GSuite] from [Laravel](https://laravel.com)/[Lumen](https://lumen.laravel.com).
+[![Tests](https://github.com/theriddleofenigma/laravel-google-chat-log/actions/workflows/tests.yml/badge.svg)](https://github.com/theriddleofenigma/laravel-google-chat-log/actions/workflows/tests.yml)
+[![Lint](https://github.com/theriddleofenigma/laravel-google-chat-log/actions/workflows/lint.yml/badge.svg)](https://github.com/theriddleofenigma/laravel-google-chat-log/actions/workflows/lint.yml)
+
+Send your [Laravel](https://laravel.com)/[Lumen](https://lumen.laravel.com) application logs straight to a Google Chat space [Google Workspace, formerly GSuite] via incoming webhooks.
+
+## Requirements
+
+- PHP `^8.2`
+- Laravel 11 or 12 (`illuminate/support` `^11.0|^12.0`)
+
+> For Laravel 10 use `^2.x`. For Laravel 9 or lower use `^1.x`.
 
 ## Installation
-### Composer install
+
 ```shell
 composer require theriddleofenigma/laravel-google-chat-log
 ```
 
-For laravel 9.x or lower, please use v1.x
-```shell
-composer require theriddleofenigma/laravel-google-chat-log:^1.3
+The package ships with Laravel package auto-discovery, so the service provider
+is registered for you and it automatically adds a `google-chat` logging
+channel. In most cases the only thing you need to do is set the webhook url:
+
+```dotenv
+LOG_GOOGLE_CHAT_WEBHOOK_URL=https://chat.googleapis.com/v1/spaces/XXXX/messages?key=...&token=...
 ```
 
-Add the following code to the channels array in `config/logging.php` in your laravel/lumen application.
+Then log to the channel:
+
+```php
+use Illuminate\Support\Facades\Log;
+
+Log::channel('google-chat')->error('Something went wrong');
+```
+
+To route your default log stack through Google Chat, add `google-chat` to the
+`stack` channel in `config/logging.php`, or set `LOG_CHANNEL=google-chat`.
+
+### Customising the channel
+
+The channel is registered with sensible defaults, but anything you define in
+your application's `config/logging.php` always takes precedence. You can
+publish the channel definition to tweak it:
+
+```shell
+php artisan vendor:publish --tag=google-chat-log-config
+```
+
+Or define it manually in the `channels` array of `config/logging.php`:
+
 ```php
 'google-chat' => [
     'driver' => 'monolog',
+    'handler' => \Enigma\GoogleChatHandler::class,
     'url' => env('LOG_GOOGLE_CHAT_WEBHOOK_URL'),
+    'level' => env('LOG_LEVEL', 'debug'),
     'notify_users' => [
         'default' => env('LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT'),
         'emergency' => env('LOG_GOOGLE_CHAT_NOTIFY_USER_ID_EMERGENCY'),
@@ -31,43 +68,74 @@ Add the following code to the channels array in `config/logging.php` in your lar
         'info' => env('LOG_GOOGLE_CHAT_NOTIFY_USER_ID_INFO'),
         'debug' => env('LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEBUG'),
     ],
-    'level' => env('LOG_LEVEL', 'debug'),
-    'handler' => \Enigma\GoogleChatHandler::class,
 ],
 ```
 
-You can provide the eight logging levels defined in the [RFC 5424 specification](https://tools.ietf.org/html/rfc5424): `emergency`, `alert`, `critical`, `error`, `warning`, `notice`, `info`, and `debug`
+> **Lumen:** make sure `$app->withFacades();` is uncommented in
+> `bootstrap/app.php`, and register `Enigma\GoogleChatLogServiceProvider`.
 
-<b>Note*:</b> Make sure to set the <b>LOG_GOOGLE_CHAT_WEBHOOK_URL</b> env variable.
-And all other <b>LOG_GOOGLE_CHAT_NOTIFY_USER_ID</b> are optional.
-Here, you can set multiple google chat webhook url as comma separated value for the <b>LOG_GOOGLE_CHAT_WEBHOOK_URL</b> env variable.
+You can provide the eight logging levels defined in the
+[RFC 5424 specification](https://tools.ietf.org/html/rfc5424): `emergency`,
+`alert`, `critical`, `error`, `warning`, `notice`, `info`, and `debug`.
 
-<b>Note*:</b> For lumen, make sure the `$app->withFacades();` is uncommented in the <b>bootstrap/app.php</b>.
+### Multiple webhook urls
 
-Now, you can notify a specific user with `@mention` in the error log by setting the corresponding USER_ID to the `LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT` env variable. User Ids mapped under `LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT` will be notified for all log levels.  
+Set multiple Google Chat webhook urls as a comma separated value for the
+`LOG_GOOGLE_CHAT_WEBHOOK_URL` env variable (or as an array in the channel
+config) and every space receives the log.
 
-For getting the <b>USER_ID</b>, right-click the user-icon of the person whom you want to notify in the Google chat from your browser window and select inspect. Under the `div` element find the attribute data_member_id, then the USER_ID can be found as `data-member-id="user/human/{USER_ID}>"`.
+## Notifying users with `@mention`
 
-In order to notify all the users like `@all`, Set ```LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT=all```. Also, you can set multiple USER_IDs as comma separated value.
-In order to notify different users for different log levels, you can set the corresponding env keys mentioned to configure in the `logging.php` file.
+Notify a specific user by setting the corresponding user id. Ids mapped under
+`LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT` are notified for **all** log levels:
 
-Now, you can add custom additional logs to the Google chat message by passing a closure function to the GoogleChatHandler::$additionalLogs property.
+```dotenv
+LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT=1234567890
+```
+
+To find a **USER_ID**, right-click the user icon of the person you want to
+notify in Google Chat and select inspect. On the `div` element find the
+`data-member-id` attribute — the id is the value in
+`data-member-id="user/human/{USER_ID}"`.
+
+To notify everyone (`@all`), set `LOG_GOOGLE_CHAT_NOTIFY_USER_ID_DEFAULT=all`.
+Multiple ids can be provided as a comma separated value, and each log level can
+target different users via its matching `LOG_GOOGLE_CHAT_NOTIFY_USER_ID_*` env
+variable.
+
+## Additional custom logs
+
+Append extra key-value pairs to every Google Chat message by assigning a
+closure to `GoogleChatHandler::$additionalLogs`. The closure receives the
+current `Monolog\LogRecord` and must return an array:
+
 ```php
 use Enigma\GoogleChatHandler;
-use Illuminate\Http\Request;
+use Monolog\LogRecord;
 
-class AppServiceProvider {
-    public function register() {}
-    public function boot() {
-        GoogleChatHandler::$additionalLogs = function () {
+class AppServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        GoogleChatHandler::$additionalLogs = function (LogRecord $record) {
             return [
                 'tenant' => request()->user()?->tenant->name,
-                'request' => json_encode(request()->toArray()),
+                'request' => request()->fullUrl(),
             ];
         };
     }
 }
 ```
+
+Non-string values are JSON encoded automatically.
+
+## Testing
+
+```shell
+composer test
+```
+
+This runs Laravel Pint (code style) and the PHPUnit suite.
 
 ## License
 
