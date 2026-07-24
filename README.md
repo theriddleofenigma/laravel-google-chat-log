@@ -132,10 +132,16 @@ Non-string values are JSON encoded automatically.
 ## Testing
 
 ```shell
-composer test
+composer test      # run the PHPUnit suite
+composer lint      # check code style with Laravel Pint
+composer format    # fix code style automatically
 ```
 
-This runs Laravel Pint (code style) and the PHPUnit suite.
+## Contributing
+
+Contributions are welcome &mdash; please read the
+[contributing guide](CONTRIBUTING.md) first. For security issues, see the
+[security policy](SECURITY.md).
 
 ## License
 

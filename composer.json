@@ -47,13 +47,10 @@
         }
     },
     "scripts": {
-        "lint": "pint",
-        "test:lint": "pint --test",
-        "test:unit": "phpunit",
-        "test": [
-            "@test:lint",
-            "@test:unit"
-        ]
+        "test": "vendor/bin/phpunit",
+        "test:coverage": "vendor/bin/phpunit --coverage-text",
+        "lint": "vendor/bin/pint --test",
+        "format": "vendor/bin/pint"
     },
     "config": {
         "sort-packages": true
