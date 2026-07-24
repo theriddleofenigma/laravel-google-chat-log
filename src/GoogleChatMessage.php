@@ -44,10 +44,12 @@ class GoogleChatMessage
                             'subtitle' => config('app.name'),
                         ],
                         'sections' => [
-                            'header' => 'Details',
-                            'collapsible' => true,
-                            'uncollapsibleWidgetsCount' => 3,
-                            'widgets' => $this->widgets(),
+                            [
+                                'header' => 'Details',
+                                'collapsible' => true,
+                                'uncollapsibleWidgetsCount' => 3,
+                                'widgets' => $this->widgets(),
+                            ],
                         ],
                     ],
                 ],

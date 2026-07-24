@@ -22,7 +22,7 @@ class AdditionalLogsTest extends TestCase
         $this->handle($this->makeRecord(Level::Error));
 
         Http::assertSent(function (Request $request) {
-            $widgets = $request->data()['cardsV2'][0]['card']['sections']['widgets'];
+            $widgets = $request->data()['cardsV2'][0]['card']['sections'][0]['widgets'];
             $last = end($widgets);
 
             return $last['decoratedText']['text'] === '<b>Tenant Name:</b> Acme Inc';
@@ -38,7 +38,7 @@ class AdditionalLogsTest extends TestCase
         $this->handle($this->makeRecord(Level::Error));
 
         Http::assertSent(function (Request $request) {
-            $widgets = $request->data()['cardsV2'][0]['card']['sections']['widgets'];
+            $widgets = $request->data()['cardsV2'][0]['card']['sections'][0]['widgets'];
             $last = end($widgets);
 
             return $last['decoratedText']['text'] === '<b>Payload:</b> {"a":1}';

@@ -31,6 +31,9 @@ Renovation release.
 
 ### Fixed
 
+- The card payload now emits `sections` as an array of section objects, as
+  required by the Google Chat `cardsV2` schema (it was previously a single
+  object).
 - The record timestamp is now formatted as a readable string instead of being
   passed as a raw `DateTimeImmutable` object.
 - Non-string additional log values are now reliably JSON encoded using

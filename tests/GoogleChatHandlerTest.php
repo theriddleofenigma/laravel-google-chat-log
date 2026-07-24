@@ -28,6 +28,29 @@ class GoogleChatHandlerTest extends TestCase
         });
     }
 
+    public function test_it_builds_a_spec_compliant_cardsv2_payload(): void
+    {
+        Http::fake();
+
+        $this->handle($this->makeRecord(Level::Error, 'Payment failed'));
+
+        Http::assertSent(function (Request $request) {
+            $card = $request->data()['cardsV2'][0]['card'];
+
+            // "sections" must be a list of Section objects, not a single object.
+            $this->assertArrayHasKey(0, $card['sections']);
+            $this->assertSame(array_keys($card['sections']), range(0, count($card['sections']) - 1));
+
+            $section = $card['sections'][0];
+            $this->assertSame('Details', $section['header']);
+            $this->assertTrue($section['collapsible']);
+            $this->assertIsArray($section['widgets']);
+            $this->assertArrayHasKey(0, $section['widgets']);
+
+            return true;
+        });
+    }
+
     public function test_it_works_through_the_laravel_log_channel(): void
     {
         Http::fake();
@@ -88,7 +111,7 @@ class GoogleChatHandlerTest extends TestCase
         $this->handle($this->makeRecord(Level::Info));
 
         Http::assertSent(function (Request $request) {
-            $widgets = $request->data()['cardsV2'][0]['card']['sections']['widgets'];
+            $widgets = $request->data()['cardsV2'][0]['card']['sections'][0]['widgets'];
 
             return $widgets[1]['decoratedText']['text'] === "<font color='#48d62f'>".Level::Info->getName().'</font>';
         });
