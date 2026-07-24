@@ -9,8 +9,8 @@ Send your [Laravel](https://laravel.com)/[Lumen](https://lumen.laravel.com) appl
 
 ## Requirements
 
-- PHP `^8.2`
-- Laravel 11 or 12 (`illuminate/support` `^11.0|^12.0`)
+- PHP `^8.2` (Laravel 13 requires PHP `8.3+`)
+- Laravel 11, 12 or 13 (`illuminate/support` `^11.0|^12.0|^13.0`)
 
 > For Laravel 10 use `^2.x`. For Laravel 9 or lower use `^1.x`.
 

@@ -15,14 +15,15 @@ Renovation release.
 - A publishable `config/google-chat.php` channel definition.
 - A full test suite built on Orchestra Testbench + PHPUnit.
 - [Laravel Pint](https://laravel.com/docs/pint) for code style, plus GitHub
-  Actions workflows for tests (PHP 8.2-8.4 × Laravel 11/12) and linting.
+  Actions workflows for tests (PHP 8.2-8.4 × Laravel 11/12/13) and linting.
 - The `GoogleChatHandler::$additionalLogs` closure now receives the current
   `Monolog\LogRecord` instance.
 
 ### Changed
 
 - **Breaking:** dropped support for PHP < 8.2 and Laravel 10. Supported ranges
-  are now PHP `^8.2` and `illuminate/support` `^11.0|^12.0`.
+  are now PHP `^8.2` and `illuminate/support` `^11.0|^12.0|^13.0` (Laravel 13
+  itself requires PHP 8.3+).
 - Message building was extracted into a dedicated `Enigma\GoogleChatMessage`
   class and the handler was rewritten with `declare(strict_types=1)` and full
   type coverage.
