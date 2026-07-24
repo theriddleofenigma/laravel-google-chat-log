@@ -20,6 +20,9 @@ jobs:
           php-version: '8.3'
           coverage: none
 
+      - name: Allow installing security-advised framework versions
+        run: composer config --no-plugins policy.advisories.block false || true
+
       - name: Install dependencies
         run: composer update --prefer-dist --no-interaction
 

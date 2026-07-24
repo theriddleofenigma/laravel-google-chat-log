@@ -33,6 +33,12 @@ jobs:
           extensions: mbstring
           coverage: none
 
+      - name: Allow installing security-advised framework versions
+        # CI exercises the full supported version range, so we do not want
+        # Composer's advisory policy to block resolution of older patch
+        # releases within a supported major.
+        run: composer config --no-plugins policy.advisories.block false || true
+
       - name: Install dependencies
         run: |
           composer require \
