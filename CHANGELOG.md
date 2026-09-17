@@ -2,6 +2,26 @@
 
 All notable changes to `laravel-google-chat-log` will be documented in this file.
 
+## v3.1.0
+
+PHP 8.5 support and dependency refresh.
+
+### Added
+
+- Official support for PHP 8.5: the test matrix now covers PHP 8.2-8.5 across
+  the supported Laravel versions (Laravel 11 stays on PHP 8.2-8.4, matching
+  upstream support).
+
+### Changed
+
+- The `guzzlehttp/guzzle` constraint was widened to `^7.8.2|^8.0` so the
+  package installs alongside Guzzle 8 (allowed by Laravel 13) while staying
+  compatible with Laravel 11 and 12, which still require Guzzle `^7.8.2`.
+- Development dependencies were refreshed: `laravel/pint` `^1.30`,
+  `phpunit/phpunit` `^11.5|^12.0|^13.0` (PHPUnit 13 requires PHP 8.4+, so
+  Composer resolves the newest suite each PHP version supports).
+- The lint workflow now runs on PHP 8.4.
+
 ## v3.0.0
 
 Renovation release.
