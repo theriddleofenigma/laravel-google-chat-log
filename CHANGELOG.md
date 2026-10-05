@@ -2,6 +2,62 @@
 
 All notable changes to `laravel-google-chat-log` will be documented in this file.
 
+## v3.2.0
+
+Reliability and per-channel configuration. Every new option is opt-in and
+defaults to the 3.1 behaviour; there are no breaking changes.
+
+### Added
+
+- Per-channel configuration: pass `'with' => ['channel' => '<name>']` to read
+  that channel's config, or `'with' => ['config' => [...]]` for on-demand
+  channels. Several Google Chat channels can now run side by side with their
+  own webhooks, levels, mentions and options.
+- `GoogleChatHandler::__construct()` accepts the optional `$channel` and
+  `$config` arguments after `$level` and `$bubble`.
+- New `Enigma\ChannelConfig` class, which reads a channel's config with the
+  3.x defaults applied.
+- `LOG_GOOGLE_CHAT_LEVEL`, which overrides `LOG_LEVEL` for the channel.
+- `enabled` (`LOG_GOOGLE_CHAT_ENABLED`, default `true`) and `environments`
+  (`LOG_GOOGLE_CHAT_ENVIRONMENTS`, default every environment).
+- `timeout` and `connect_timeout` (default `null`, meaning Laravel's HTTP
+  client defaults).
+- `retries` (default `0`), `retry_delay` and `retry_max_delay`: retries 429 and
+  5xx responses with exponential backoff and jitter, honouring `Retry-After`.
+- `fallback_channel` (default `null`): a log channel that receives a masked
+  report when a message can not be delivered.
+- `on_missing_url`: `throw` (default, unchanged), `ignore` or `warn`.
+- Per-channel additional logs: an invokable class-string in the channel's
+  `additional_logs` key (safe with `config:cache`), or
+  `GoogleChatHandler::additionalLogsFor($channel, $closure)`. The global
+  `GoogleChatHandler::$additionalLogs` remains the fallback.
+- `GoogleChatHandler::flushState()` to reset static state, mainly for tests.
+- `php artisan google-chat-log:test {--channel=} {--level=}` sends a sample
+  card and diagnoses the response.
+- README sections on multiple channels, reliability, the configuration
+  reference and Google Chat limits & sizing.
+
+### Fixed
+
+- Every channel used the `logging.channels.google-chat` settings, so a second
+  channel silently used the first channel's webhook, level and mentions.
+- Connection errors and other exceptions thrown while sending escaped the
+  logger and could break the request that logged. Sending is now wrapped and
+  failures are reported to `fallback_channel` (or ignored when unset). Errors
+  raised by the additional-logs hook still throw, as before.
+- A log message written while a Google Chat message was being delivered (for
+  example by the fallback channel or the additional-logs hook) could loop back
+  into the handler. A re-entrancy guard now drops it.
+- Webhook keys and tokens could appear in exception messages. All reported
+  urls and errors are masked as `spaces/{SPACE_ID}/messages?key=***&token=***`.
+- Messages over Google's 32,000 byte limit were rejected outright: the card
+  title held the full, unbounded log message, and the 4,096 character text
+  cap could still exceed the limit once JSON escaped. Payloads over 30,000
+  bytes are now trimmed (widgets, then text, then title) with a
+  `[truncated]` marker; smaller payloads are sent byte-for-byte as before.
+- The HTTP response is now checked; failed deliveries are reported to
+  `fallback_channel` when one is set (silent otherwise, as before).
+
 ## v3.1.0
 
 PHP 8.5 support and dependency refresh.
