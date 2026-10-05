@@ -48,6 +48,7 @@
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
+        "test:live": "vendor/bin/phpunit --testsuite Live",
         "test:coverage": "vendor/bin/phpunit --coverage-text",
         "lint": "vendor/bin/pint --test",
         "format": "vendor/bin/pint"
