@@ -5,10 +5,16 @@
          colors="true"
          cacheDirectory=".phpunit.cache"
          failOnWarning="true"
-         failOnRisky="true">
+         failOnRisky="true"
+         defaultTestSuite="Unit">
     <testsuites>
-        <testsuite name="Laravel Google Chat Log Test Suite">
+        <testsuite name="Unit">
             <directory>tests</directory>
+            <exclude>tests/Live</exclude>
+        </testsuite>
+        <!-- Real Google Chat requests; see tests/Live/WebhookLiveTest.php. -->
+        <testsuite name="Live">
+            <directory>tests/Live</directory>
         </testsuite>
     </testsuites>
     <source>

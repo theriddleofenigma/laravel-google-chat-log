@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Enigma;
 
+use Enigma\Console\TestCommand;
 use Illuminate\Support\ServiceProvider;
 
 class GoogleChatLogServiceProvider extends ServiceProvider
@@ -34,6 +35,10 @@ class GoogleChatLogServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/google-chat.php' => config_path('google-chat.php'),
             ], 'google-chat-log-config');
+
+            $this->commands([
+                TestCommand::class,
+            ]);
         }
     }
 }

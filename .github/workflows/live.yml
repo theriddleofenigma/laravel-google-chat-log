@@ -1,0 +1,70 @@
+name: Live
+
+# Sends real messages to a dedicated scratch Google Chat space.
+# Never triggered by pull_request, so the webhook secret is never exposed to
+# forks. Requires the LOG_GOOGLE_CHAT_LIVE_WEBHOOK repository secret.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# The scratch space allows 1 request per second: never run two suites at once.
+concurrency:
+  group: live-google-chat
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    name: Live suite (PHP 8.4 - Laravel 13)
+
+    env:
+      LOG_GOOGLE_CHAT_LIVE_WEBHOOK: ${{ secrets.LOG_GOOGLE_CHAT_LIVE_WEBHOOK }}
+
+    steps:
+      - name: Mask the webhook and its parts
+        id: secret
+        run: |
+          if [ -z "$LOG_GOOGLE_CHAT_LIVE_WEBHOOK" ]; then
+            echo "LOG_GOOGLE_CHAT_LIVE_WEBHOOK is not set; skipping the live suite."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # GitHub masks the full secret; also mask the key and token on their own,
+          # in case one shows up without the rest of the url.
+          for name in key token; do
+            value=$(printf '%s' "$LOG_GOOGLE_CHAT_LIVE_WEBHOOK" | sed -n "s/.*[?&]${name}=\([^&]*\).*/\1/p")
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+            fi
+          done
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout code
+        if: steps.secret.outputs.configured == 'true'
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        if: steps.secret.outputs.configured == 'true'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring
+          coverage: none
+
+      - name: Allow installing security-advised framework versions
+        if: steps.secret.outputs.configured == 'true'
+        run: composer config --no-plugins policy.advisories.block false || true
+
+      - name: Install dependencies
+        if: steps.secret.outputs.configured == 'true'
+        run: |
+          composer require "laravel/framework:^13.0" "orchestra/testbench:^11.0" --dev --no-interaction --no-update
+          composer update --prefer-dist --no-interaction
+
+      - name: Run the live suite
+        if: steps.secret.outputs.configured == 'true'
+        run: vendor/bin/phpunit --testsuite Live --fail-on-skipped
