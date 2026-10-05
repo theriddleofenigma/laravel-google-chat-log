@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Monolog\Level;
 use Monolog\LogRecord;
 
-class MultiChannelTest extends TestCase
+class MultiChannelTest extends PackageTestCase
 {
     protected function defineEnvironment($app): void
     {

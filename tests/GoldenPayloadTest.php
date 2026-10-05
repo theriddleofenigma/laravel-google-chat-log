@@ -17,7 +17,7 @@ use Monolog\LogRecord;
  * These fixtures must never change during 3.x: every new feature is opt-in,
  * so a record sent with the default configuration has to stay identical.
  */
-class GoldenPayloadTest extends TestCase
+class GoldenPayloadTest extends PackageTestCase
 {
     public function test_the_default_payload_is_unchanged(): void
     {

@@ -10,7 +10,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-class TestCommandTest extends TestCase
+class TestCommandTest extends PackageTestCase
 {
     protected const URL = 'https://chat.googleapis.com/v1/spaces/AAA/messages?key=SECRET-KEY&token=SECRET-TOKEN';
 

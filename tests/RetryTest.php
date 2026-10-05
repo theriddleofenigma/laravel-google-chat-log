@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
 use Monolog\Level;
 
-class RetryTest extends TestCase
+class RetryTest extends PackageTestCase
 {
     protected function setUp(): void
     {

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Monolog\Level;
 use RuntimeException;
 
-class MissingUrlTest extends TestCase
+class MissingUrlTest extends PackageTestCase
 {
     protected function defineEnvironment($app): void
     {

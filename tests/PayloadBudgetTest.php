@@ -12,7 +12,7 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Level;
 use Monolog\LogRecord;
 
-class PayloadBudgetTest extends TestCase
+class PayloadBudgetTest extends PackageTestCase
 {
     public function test_a_one_megabyte_message_fits_the_budget(): void
     {

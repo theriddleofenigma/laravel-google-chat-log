@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Monolog\Level;
 use RuntimeException;
 
-class DeliveryFailureTest extends TestCase
+class DeliveryFailureTest extends PackageTestCase
 {
     protected const SECRET_URL = 'https://chat.googleapis.com/v1/spaces/AAA/messages?key=SECRET-KEY&token=SECRET-TOKEN';
 

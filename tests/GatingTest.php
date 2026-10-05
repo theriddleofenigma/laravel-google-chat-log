@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Monolog\Level;
 
-class GatingTest extends TestCase
+class GatingTest extends PackageTestCase
 {
     public function test_a_disabled_channel_sends_nothing(): void
     {

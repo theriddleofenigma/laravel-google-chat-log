@@ -8,7 +8,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Monolog\Level;
 
-class ConfigCacheTest extends TestCase
+class ConfigCacheTest extends PackageTestCase
 {
     protected function defineEnvironment($app): void
     {
