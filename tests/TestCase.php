@@ -17,12 +17,12 @@ abstract class TestCase extends Orchestra
     {
         parent::setUp();
 
-        GoogleChatHandler::$additionalLogs = null;
+        GoogleChatHandler::flushState();
     }
 
     protected function tearDown(): void
     {
-        GoogleChatHandler::$additionalLogs = null;
+        GoogleChatHandler::flushState();
 
         parent::tearDown();
     }

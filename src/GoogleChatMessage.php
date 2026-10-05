@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Enigma;
 
+use Enigma\Support\PayloadBudget;
 use InvalidArgumentException;
 use JsonException;
 use Monolog\Level;
@@ -19,19 +20,46 @@ class GoogleChatMessage
      */
     protected const MAX_TEXT_LENGTH = 4096;
 
-    public function __construct(protected LogRecord $record) {}
+    /**
+     * Index of the first widget in the details section that may be trimmed by
+     * the payload budget (the request url and any additional logs).
+     */
+    protected const FIRST_TRIMMABLE_WIDGET = 3;
 
-    public static function fromRecord(LogRecord $record): self
+    /**
+     * @param  ChannelConfig|null  $channelConfig  The channel to read settings from.
+     *                                             Defaults to the "google-chat" channel.
+     */
+    public function __construct(protected LogRecord $record, protected ?ChannelConfig $channelConfig = null) {}
+
+    public static function fromRecord(LogRecord $record, ?ChannelConfig $channelConfig = null): self
     {
-        return new self($record);
+        return new self($record, $channelConfig);
     }
 
     /**
      * Build the full request body for the Google Chat webhook.
      *
+     * The body is trimmed only when it exceeds the payload byte budget, so
+     * messages within Google's size limit are sent exactly as built.
+     *
      * @return array<string, mixed>
      */
     public function toArray(): array
+    {
+        $payload = $this->payload();
+
+        // Floors (encoded bytes) kept per field on the first trimming pass:
+        // widgets, text, title. See PayloadBudget::apply().
+        return (new PayloadBudget)->apply($payload, $this->trimmableFields($payload), [256, 4000, 1000]);
+    }
+
+    /**
+     * The untrimmed request body.
+     *
+     * @return array<string, mixed>
+     */
+    protected function payload(): array
     {
         return [
             'text' => $this->text(),
@@ -54,6 +82,36 @@ class GoogleChatMessage
                     ],
                 ],
             ],
+        ];
+    }
+
+    /**
+     * Dot paths of the string fields the payload budget may trim, grouped in
+     * trimming priority order: context widgets, then text, then the title.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<int, array<int, string>>
+     */
+    protected function trimmableFields(array $payload): array
+    {
+        $widgets = [];
+
+        foreach ($payload['cardsV2'][0]['card']['sections'] ?? [] as $s => $section) {
+            foreach ($section['widgets'] ?? [] as $w => $widget) {
+                if ($s === 0 && $w < self::FIRST_TRIMMABLE_WIDGET) {
+                    continue;
+                }
+
+                if (isset($widget['decoratedText']['text'])) {
+                    $widgets[] = "cardsV2.0.card.sections.{$s}.widgets.{$w}.decoratedText.text";
+                }
+            }
+        }
+
+        return [
+            $widgets,
+            ['text'],
+            ['cardsV2.0.card.header.title'],
         ];
     }
 
@@ -180,7 +238,7 @@ class GoogleChatMessage
      */
     protected function customWidgets(): array
     {
-        $additionalLogs = GoogleChatHandler::$additionalLogs;
+        $additionalLogs = GoogleChatHandler::additionalLogsResolver($this->channelConfig());
         if (! $additionalLogs) {
             return [];
         }
@@ -216,10 +274,18 @@ class GoogleChatMessage
     }
 
     /**
-     * Read a value from the google-chat log channel configuration.
+     * Read a value from the log channel configuration.
      */
     protected function config(string $key): mixed
     {
-        return config("logging.channels.google-chat.{$key}");
+        return $this->channelConfig()->get($key);
+    }
+
+    /**
+     * The channel config this message is built for.
+     */
+    protected function channelConfig(): ChannelConfig
+    {
+        return $this->channelConfig ?? ChannelConfig::forChannel();
     }
 }
