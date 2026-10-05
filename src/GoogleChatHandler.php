@@ -91,8 +91,10 @@ class GoogleChatHandler extends AbstractProcessingHandler
      */
     public static function additionalLogsResolver(ChannelConfig $config): ?callable
     {
-        if (isset(static::$channelAdditionalLogs[$config->name()])) {
-            return static::$channelAdditionalLogs[$config->name()];
+        $name = $config->name();
+
+        if ($name !== null && isset(static::$channelAdditionalLogs[$name])) {
+            return static::$channelAdditionalLogs[$name];
         }
 
         if ($class = $config->additionalLogs()) {
@@ -211,7 +213,7 @@ class GoogleChatHandler extends AbstractProcessingHandler
         }
 
         try {
-            Log::channel($channel)->warning($message, ['channel' => $config->name()] + $context);
+            Log::channel($channel)->warning($message, ['channel' => $config->name() ?? '(unnamed)'] + $context);
         } catch (Throwable) {
             // The fallback channel itself failed; there is nowhere left to report.
         }
@@ -239,8 +241,8 @@ class GoogleChatHandler extends AbstractProcessingHandler
                 return [];
 
             case 'warn':
-                if (! isset(static::$missingUrlWarned[$config->name()])) {
-                    static::$missingUrlWarned[$config->name()] = true;
+                if (! isset(static::$missingUrlWarned[$config->key()])) {
+                    static::$missingUrlWarned[$config->key()] = true;
 
                     $this->reportFailure($config, 'Google Chat webhook url is not configured; log messages are being dropped.', []);
                 }

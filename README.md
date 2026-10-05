@@ -105,7 +105,11 @@ key is read from the channel itself:
 
 `name` is optional. As with any Laravel channel it becomes the Monolog channel
 name in the message text (the environment name when omitted), and it is the
-name to use with [`additionalLogsFor()`](#per-channel-additional-logs). The
+name to use with [`additionalLogsFor()`](#per-channel-additional-logs). Laravel
+does not tell a custom factory the channel's key, so a channel without `name`
+is anonymous: `additionalLogsFor()` can not target it, and it never picks up
+hooks registered for `google-chat` (the `additional_logs` class and the global
+closure still apply). The
 factory builds the channel like Laravel's `monolog` driver: same default
 formatter, and `formatter`, `processors` and `action_level` work as usual.
 

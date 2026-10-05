@@ -39,7 +39,8 @@ class ChannelConfig
     }
 
     /**
-     * Build the config from a raw channel config array.
+     * Build the config from a raw channel config array. Without a name the
+     * channel is anonymous: see name().
      *
      * @param  array<string, mixed>  $config
      */
@@ -50,10 +51,27 @@ class ChannelConfig
 
     /**
      * The channel name, used to look up per-channel additional-logs hooks.
+     *
+     * Null for a channel built from a raw config array without a name (a
+     * nameless "custom" channel or Log::build()); such a channel never picks
+     * up another channel's hooks or state.
      */
-    public function name(): string
+    public function name(): ?string
     {
-        return $this->name ?? self::DEFAULT_CHANNEL;
+        return $this->name;
+    }
+
+    /**
+     * A key that identifies this channel for per-process state: its name, or
+     * a hash of its config when it has none.
+     */
+    public function key(): string
+    {
+        if ($this->name !== null) {
+            return $this->name;
+        }
+
+        return 'config:'.md5((string) json_encode($this->config, JSON_PARTIAL_OUTPUT_ON_ERROR));
     }
 
     /**

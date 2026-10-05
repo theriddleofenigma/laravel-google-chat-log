@@ -15,7 +15,9 @@ defaults to the 3.1 behaviour; there are no breaking changes.
   `'with' => ['channel' => '<name>']` to read that channel's config, or
   `'with' => ['config' => [...]]` for on-demand channels. Several Google Chat
   channels can now run side by side with their own webhooks, levels, mentions
-  and options.
+  and options. Give a `custom` channel a `name` to target it with
+  `additionalLogsFor()`; a channel without one is anonymous and never shares
+  the `google-chat` channel's hooks or one-time warnings.
 - `GoogleChatHandler::__construct()` accepts the optional `$channel` and
   `$config` arguments after `$level` and `$bubble`.
 - New `Enigma\ChannelConfig` class, which reads a channel's config with the
