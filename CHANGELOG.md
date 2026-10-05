@@ -9,10 +9,13 @@ defaults to the 3.1 behaviour; there are no breaking changes.
 
 ### Added
 
-- Per-channel configuration: pass `'with' => ['channel' => '<name>']` to read
-  that channel's config, or `'with' => ['config' => [...]]` for on-demand
-  channels. Several Google Chat channels can now run side by side with their
-  own webhooks, levels, mentions and options.
+- Per-channel configuration. `Enigma\GoogleChatLogger` is a `custom` driver
+  factory (`'driver' => 'custom', 'via' => GoogleChatLogger::class`) that reads
+  every option from the channel's own config. Monolog-driver channels can pass
+  `'with' => ['channel' => '<name>']` to read that channel's config, or
+  `'with' => ['config' => [...]]` for on-demand channels. Several Google Chat
+  channels can now run side by side with their own webhooks, levels, mentions
+  and options.
 - `GoogleChatHandler::__construct()` accepts the optional `$channel` and
   `$config` arguments after `$level` and `$bubble`.
 - New `Enigma\ChannelConfig` class, which reads a channel's config with the
@@ -34,6 +37,9 @@ defaults to the 3.1 behaviour; there are no breaking changes.
 - `GoogleChatHandler::flushState()` to reset static state, mainly for tests.
 - `php artisan google-chat-log:test {--channel=} {--level=}` sends a sample
   card and diagnoses the response.
+- `composer test:live` and a `Live` testsuite (`tests/Live`) that sends real
+  messages when `LOG_GOOGLE_CHAT_LIVE_WEBHOOK` is set, plus a nightly `Live`
+  workflow. Neither runs in `composer test` or on pull requests.
 - README sections on multiple channels, reliability, the configuration
   reference and Google Chat limits & sizing.
 

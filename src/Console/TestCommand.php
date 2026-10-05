@@ -6,6 +6,7 @@ namespace Enigma\Console;
 
 use DateTimeImmutable;
 use Enigma\ChannelConfig;
+use Enigma\GoogleChatLogger;
 use Enigma\GoogleChatMessage;
 use Enigma\Support\Sender;
 use Enigma\Support\WebhookUrl;
@@ -46,7 +47,7 @@ class TestCommand extends Command
             return self::FAILURE;
         }
 
-        $config = ChannelConfig::forChannel($this->configChannelName($name));
+        $config = $this->channelConfig($name);
         $urls = $config->urls();
 
         if ($urls === []) {
@@ -130,14 +131,42 @@ class TestCommand extends Command
     }
 
     /**
-     * The channel whose config is read: a "with.channel" entry wins, matching
-     * how the handler itself is constructed.
+     * The config the channel's handler reads, resolved the same way the
+     * handler itself is built: a "with.channel" or "with.config" entry for
+     * monolog channels, the channel's own config for GoogleChatLogger.
      */
-    protected function configChannelName(string $name): string
+    protected function channelConfig(string $name): ChannelConfig
     {
-        $with = config("logging.channels.{$name}.with.channel");
+        $channel = (array) config("logging.channels.{$name}");
 
-        return is_string($with) && $with !== '' ? $with : $name;
+        if (($channel['driver'] ?? null) === 'custom' && is_a($channel['via'] ?? null, GoogleChatLogger::class, true)) {
+            $configName = isset($channel['name']) && is_string($channel['name']) && $channel['name'] !== '' ? $channel['name'] : null;
+
+            return ChannelConfig::fromArray($channel, $configName);
+        }
+
+        $with = $channel['with'] ?? [];
+
+        if (is_array($with['config'] ?? null)) {
+            return ChannelConfig::fromArray($with['config'], is_string($with['channel'] ?? null) ? $with['channel'] : null);
+        }
+
+        if (is_string($with['channel'] ?? null) && $with['channel'] !== '') {
+            return ChannelConfig::forChannel($with['channel']);
+        }
+
+        if ($name !== ChannelConfig::DEFAULT_CHANNEL && isset($channel['url'])) {
+            $this->components->warn(sprintf(
+                'Channel [%s] sets its own "url", but its handler reads the [%s] channel config. Add \'with\' => [\'channel\' => \'%s\'] or use the %s driver. Testing [%s] settings.',
+                $name,
+                ChannelConfig::DEFAULT_CHANNEL,
+                $name,
+                'GoogleChatLogger "custom"',
+                ChannelConfig::DEFAULT_CHANNEL,
+            ));
+        }
+
+        return ChannelConfig::forChannel();
     }
 
     protected function sampleRecord(string $channel, Level $level): LogRecord

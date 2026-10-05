@@ -88,8 +88,29 @@ config) and every space receives the log.
 ### Multiple channels
 
 Since 3.2 every channel can have its own webhook, level, mentions and options.
-Laravel only passes a handler the keys under `with`, so tell the handler which
-channel config to read with `'with' => ['channel' => '<channel name>']`:
+The recommended way is a `custom` driver channel built by
+`Enigma\GoogleChatLogger`. Laravel hands it the whole channel config, so every
+key is read from the channel itself:
+
+```php
+'google-chat-ops' => [
+    'driver' => 'custom',
+    'via' => \Enigma\GoogleChatLogger::class,
+    'name' => 'google-chat-ops',
+    'url' => env('LOG_GOOGLE_CHAT_OPS_WEBHOOK_URL'),
+    'level' => 'critical',
+    'notify_users' => ['default' => 'all'],
+],
+```
+
+`name` is optional. As with any Laravel channel it becomes the Monolog channel
+name in the message text (the environment name when omitted), and it is the
+name to use with [`additionalLogsFor()`](#per-channel-additional-logs). The
+factory builds the channel like Laravel's `monolog` driver: same default
+formatter, and `formatter`, `processors` and `action_level` work as usual.
+
+With the `monolog` driver, Laravel only passes the handler the keys under
+`with`, so tell it which channel config to read:
 
 ```php
 'google-chat-ops' => [
@@ -102,8 +123,10 @@ channel config to read with `'with' => ['channel' => '<channel name>']`:
 ],
 ```
 
-Without `with.channel` the handler reads `logging.channels.google-chat`, as in
-earlier releases. Keys missing from a channel use the defaults listed in
+A `monolog` channel without `with.channel` reads `logging.channels.google-chat`,
+as in earlier releases, even if it sets its own `url`. `php artisan
+google-chat-log:test --channel=<name>` warns about that case. Keys missing from
+a channel use the defaults listed in
 [Configuration reference](#configuration-reference), so a channel only needs the
 keys it changes.
 
@@ -133,8 +156,9 @@ like 3.1.
   webhook can stall a request for that long. `5` and `2` are good values.
 - **Retries.** `LOG_GOOGLE_CHAT_RETRIES=2` retries `429` and `5xx` responses
   only, with exponential backoff and jitter (`retry_delay`, default 500 ms,
-  doubling per attempt) and honours Google's `Retry-After` header. Every wait is
-  capped at `retry_max_delay` (default 10000 ms). Retries run synchronously.
+  doubling per attempt) and honours Google's `Retry-After` header up to
+  `retry_max_delay` (default 10000 ms), which caps every wait. Retries run
+  synchronously, inside the request that logged.
 - **Enable switch and environments.** `LOG_GOOGLE_CHAT_ENABLED=false` turns the
   channel off; `LOG_GOOGLE_CHAT_ENVIRONMENTS=production,staging` limits it to
   those environments.
@@ -320,6 +344,10 @@ LOG_GOOGLE_CHAT_RETRIES=2
 LOG_GOOGLE_CHAT_FALLBACK_CHANNEL=daily
 ```
 
+The 4.0 release plans to make `LOG_GOOGLE_CHAT_LEVEL=error`, the 5s / 2s
+timeouts and 2 retries the defaults. Setting them now gives you 4.0's
+behaviour on 3.x.
+
 ## Testing
 
 ```shell
@@ -327,6 +355,18 @@ composer test      # run the PHPUnit suite
 composer lint      # check code style with Laravel Pint
 composer format    # fix code style automatically
 ```
+
+The live suite in `tests/Live` sends real messages and is never part of
+`composer test`. Point it at a dedicated scratch space, because it uses that
+space's 1 request per second quota:
+
+```shell
+LOG_GOOGLE_CHAT_LIVE_WEBHOOK="https://chat.googleapis.com/v1/spaces/..." composer test:live
+```
+
+The `Live` GitHub workflow runs it nightly and on demand, using the
+`LOG_GOOGLE_CHAT_LIVE_WEBHOOK` repository secret. It never runs on pull
+requests.
 
 ## Contributing
 

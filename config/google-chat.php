@@ -17,6 +17,10 @@ return [
     | your application's config/logging.php always takes precedence over the
     | defaults below.
     |
+    | For additional Google Chat channels with their own settings, use the
+    | "custom" driver with 'via' => Enigma\GoogleChatLogger::class (see the
+    | README, "Multiple channels").
+    |
     */
 
     'driver' => 'monolog',
